@@ -5,26 +5,46 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from 'lucide-react'
-import { getMenus, trainModel } from '@/utils/api'
-import type { DayMeals, Meal, TrainingData } from '@/types/meals'
+
+type Meal = {
+  id: number
+  name: string
+  date: string
+  selected?: boolean
+}
+
+type DayMeals = Meal[]
 
 export default function TrainingPage() {
   const [meals, setMeals] = useState<DayMeals[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentDay, setCurrentDay] = useState(0)
-  const [currentPair, setCurrentPair] = useState(0)
-  const [trainingData, setTrainingData] = useState<TrainingData>({ data: [] })
+  const [currentGroup, setCurrentGroup] = useState(0)
+  const [trainingData, setTrainingData] = useState<Array<Meal[]>>([]) // Store groups of 3 meals
+  const [uniqueDates, setUniqueDates] = useState<string[]>([])
 
-  // Fetch menus on component mount
   useEffect(() => {
     async function fetchMenus() {
       try {
-        const menus = await getMenus()
-        console.log('Fetched menus:', menus)
-        setMeals(menus)
+        console.log('Fetching menus...')
+        const response = await fetch('https://kroky-ai-backend.vercel.app/api/menus')
+        if (!response.ok) {
+          throw new Error('Failed to fetch menus')
+        }
+        const data: Meal[][] = await response.json()
+
+        // Extract and sort unique dates
+        const dates = Array.from(new Set(data.flat().map((meal: Meal) => meal.date))).sort()
+        setUniqueDates(dates)
+
+        // Group meals by date
+        const groupedMeals = dates.map(date => 
+          data.flat().filter((meal: Meal) => meal.date === date)
+        )
+        setMeals(groupedMeals)
       } catch (err) {
-        console.error('Error fetching menus:', err)
+        console.error('Fetch error:', err)
         setError(err instanceof Error ? err.message : 'Failed to fetch menus')
       } finally {
         setLoading(false)
@@ -34,79 +54,83 @@ export default function TrainingPage() {
     fetchMenus()
   }, [])
 
+  // Get current group of meals to compare
+  const getCurrentGroup = (): Meal[] => {
+    const dayMeals = meals[currentDay]
+    if (!dayMeals) return []
+
+    const groupSize = 3
+    const startIndex = currentGroup * groupSize
+    return dayMeals.slice(startIndex, startIndex + groupSize)
+  }
+
   // Calculate progress
-  const totalDays = meals.length
-  const getPairsForDay = (dayMeals: Meal[]) => {
-    const n = dayMeals.length
-    return (n * (n - 1)) / 2
-  }
-  
-  const totalPairs = meals.reduce((sum, dayMeals) => sum + getPairsForDay(dayMeals), 0)
-  console.log('Total pairs:', totalPairs)
-
-  const currentDayCompletedPairs = currentPair
-  const previousDaysCompletedPairs = meals
-    .slice(0, currentDay)
-    .reduce((sum, dayMeals) => sum + getPairsForDay(dayMeals), 0)
-  const completedPairs = previousDaysCompletedPairs + currentDayCompletedPairs
-  const progress = totalPairs > 0 ? (completedPairs / totalPairs) * 100 : 0
-  console.log('Progress:', progress)
-
-  // Get current pair of meals to compare
-  const getCurrentPair = (): [Meal | null, Meal | null] => {
-    const dayMeals = meals[currentDay]
-    if (!dayMeals) return [null, null]
-    
-    let pairIndex = currentPair
-    for (let i = 0; i < dayMeals.length; i++) {
-      for (let j = i + 1; j < dayMeals.length; j++) {
-        if (pairIndex === 0) {
-          return [dayMeals[i], dayMeals[j]]
-        }
-        pairIndex--
-      }
-    }
-    
-    return [null, null]
+  const getTotalGroups = (dayMeals: DayMeals) => {
+    const groupSize = 3
+    return Math.ceil(dayMeals.length / groupSize)
   }
 
-  const selectPreference = async (meal1: Meal, meal2: Meal, preferredId: number) => {
-    // Add the pair to training data
-    const newPair = [
-      { id: meal1.id, name: meal1.name, selected: meal1.id === preferredId },
-      { id: meal2.id, name: meal2.name, selected: meal2.id === preferredId }
-    ]
-    
-    setTrainingData(prev => ({
-      data: [...prev.data, newPair]
-    }))
+  const totalGroups = meals.reduce((sum, dayMeals) => sum + getTotalGroups(dayMeals), 0)
+  const completedGroups = trainingData.length
+  const progress = 10
 
-    // Move to next pair
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('sl-SI', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const handleSelection = async (selectedMeal: Meal) => {
+    const currentGroupMeals = getCurrentGroup()
+
+    // Add to training data (stores the group of 3 meals)
+    setTrainingData((prev) => [
+      ...prev,
+      currentGroupMeals.map((meal) => ({
+        id: meal.id,
+        name: meal.name,
+        date: meal.date,
+        selected: meal.id === selectedMeal.id,
+      })),
+    ])
+
+    // Move to the next group
     const dayMeals = meals[currentDay]
-    const totalPairsForCurrentDay = getPairsForDay(dayMeals)
-    
-    const nextPair = currentPair + 1
-    if (nextPair >= totalPairsForCurrentDay) {
-      if (currentDay + 1 < totalDays) {
-        // Move to next day
-        setCurrentDay(currentDay + 1)
-        setCurrentPair(0)
+    const totalGroupsForDay = getTotalGroups(dayMeals)
+
+    if (currentGroup + 1 >= totalGroupsForDay) {
+      // Move to next day
+      if (currentDay + 1 < meals.length) {
+        setCurrentDay((prev) => prev + 1)
+        setCurrentGroup(0)
       } else {
-        // Training complete - send data to API
+        // Training complete
         try {
-          await trainModel(trainingData)
+          const trainingPayload = {
+            data: trainingData.map((group) => ({
+              options: group,
+              selectedOptionName: group.find((meal) => meal.selected)?.name || null,
+            })),
+          }
+
+          console.log('Training payload:', trainingPayload)
+
           setError('Training completed successfully!')
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to train model')
+          setError(
+            err instanceof Error ? err.message : 'Failed to submit training data'
+          )
         }
       }
     } else {
-      setCurrentPair(nextPair)
+      // Move to the next group
+      setCurrentGroup((prev) => prev + 1)
     }
   }
-
-  const [meal1, meal2] = getCurrentPair()
-  console.log('Current pair:', meal1, meal2)
 
   if (loading) {
     return (
@@ -126,7 +150,9 @@ export default function TrainingPage() {
     )
   }
 
-  if (!meal1 || !meal2) {
+  const currentGroupMeals = getCurrentGroup()
+
+  if (!currentGroupMeals.length) {
     return (
       <div className="container mx-auto py-8 px-4">
         <Alert>
@@ -145,41 +171,34 @@ export default function TrainingPage() {
             Click on the meal you prefer to help train the AI
           </p>
           <Progress value={progress} className="mb-2" />
-          <p className="text-sm text-muted-foreground">
-            {Math.round(progress)}% Complete - Day {currentDay + 1}
-          </p>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">
+              {progress}% Complete
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Day {currentDay + 1} of {uniqueDates.length} ({formatDate(uniqueDates[currentDay])})
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Groups completed today: {currentGroup + 1} of {getTotalGroups(meals[currentDay])}
+            </p>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <Card 
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => selectPreference(meal1, meal2, meal1.id)}
-          >
-            <CardHeader>
-              <CardTitle className="text-lg">Option 1</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-medium mb-2">{meal1.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {new Date(meal1.date).toLocaleDateString('sl-SI')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => selectPreference(meal1, meal2, meal2.id)}
-          >
-            <CardHeader>
-              <CardTitle className="text-lg">Option 2</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-lg font-medium mb-2">{meal2.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {new Date(meal2.date).toLocaleDateString('sl-SI')}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid md:grid-cols-3 gap-4">
+          {currentGroupMeals.map(meal => (
+            <Card
+              key={meal.id}
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() => handleSelection(meal)}
+            >
+              <CardHeader>
+                <CardTitle className="text-lg">{meal.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{formatDate(meal.date)}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>

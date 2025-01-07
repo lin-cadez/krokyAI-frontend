@@ -34,11 +34,11 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
+                id="username"
+                type="text"
+                placeholder="Your username"
                 required
                 disabled={isLoading}
               />
@@ -65,4 +65,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
