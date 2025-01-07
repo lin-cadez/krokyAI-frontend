@@ -1,20 +1,38 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/auth-context'
+import { Clock, Key, Activity } from 'lucide-react'
 
 export default function ProfilePage() {
-  const router = useRouter()
+  const { username, isAuthenticated } = useAuth()
   const [autoOrder, setAutoOrder] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
-  
-  const handleLogout = () => {
-    // Implement logout logic here
-    router.push('/login')
-  }
+  const [sessionInfo, setSessionInfo] = useState({
+    token: '',
+    createdAt: '',
+    expiresAt: ''
+  })
+
+  useEffect(() => {
+    // Get session information from localStorage
+    const token = localStorage.getItem('sessionToken') || ''
+    const timestamp = localStorage.getItem('sessionTime') || ''
+    
+    if (timestamp) {
+      const creationTime = parseInt(timestamp)
+      const expirationTime = creationTime + (30 * 24 * 60 * 60 * 1000)
+    
+      setSessionInfo({
+        token: token.slice(0, 8) + '...',
+        createdAt: new Date(creationTime).toLocaleString(),
+        expiresAt: new Date(expirationTime).toLocaleString()
+      })
+    }
+  }, [])
 
   const handleAutoOrderToggle = (checked: boolean) => {
     if (checked) {
@@ -24,6 +42,10 @@ export default function ProfilePage() {
     }
   }
 
+  if (!isAuthenticated) {
+    return null
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <Card className="max-w-2xl mx-auto">
@@ -31,29 +53,54 @@ export default function ProfilePage() {
           <CardTitle className="text-2xl">Profile Settings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-1">
-            <h3 className="font-medium">Username</h3>
-            <p className="text-muted-foreground">john.doe@example.com</p>
-          </div>
-
-          <div className="space-y-1">
-            <h3 className="font-medium">Last Activity</h3>
-            <p className="text-muted-foreground">Ordered lunch for next week - Jan 20, 2025</p>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <h3 className="font-medium">Automatic Ordering</h3>
-              <p className="text-sm text-muted-foreground">
-                Let AI order meals for you automatically
-              </p>
+          <div className="grid gap-6">
+            <div className="flex items-center space-x-4">
+              <Key className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Username</h3>
+                <p className="text-muted-foreground">{username}</p>
+              </div>
             </div>
-            <Switch
-              checked={autoOrder}
-              onCheckedChange={handleAutoOrderToggle}
-            />
-          </div>
 
+            <div className="flex items-center space-x-4">
+              <Clock className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Session Created</h3>
+                <p className="text-muted-foreground">{sessionInfo.createdAt}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Clock className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Session Expires</h3>
+                <p className="text-muted-foreground">{sessionInfo.expiresAt}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Activity className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Session Token</h3>
+                <p className="text-muted-foreground font-mono">{sessionInfo.token}</p>
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <h3 className="font-medium">Automatic Ordering</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Let AI order meals for you automatically
+                  </p>
+                </div>
+                <Switch
+                  checked={autoOrder}
+                  onCheckedChange={handleAutoOrderToggle}
+                />
+              </div>
+            </div>
+          </div>
         </CardContent>
         {showConfirmation && (
           <div className="p-4 border-t bg-muted">

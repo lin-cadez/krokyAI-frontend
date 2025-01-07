@@ -5,21 +5,30 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/auth-context'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function LoginPage() {
-  const router = useRouter()
+  const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
+    setError(null)
 
-    // Simulate login - replace with actual authentication
-    setTimeout(() => {
+    const formData = new FormData(event.currentTarget)
+    const username = formData.get('username') as string
+    const password = formData.get('password') as string
+
+    try {
+      await login(username, password)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    } finally {
       setIsLoading(false)
-      router.push('/training')
-    }, 1000)
+    }
   }
 
   return (
@@ -33,10 +42,16 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
+                name="username"
                 type="text"
                 placeholder="Your username"
                 required
@@ -47,6 +62,7 @@ export default function LoginPage() {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 required
                 disabled={isLoading}
@@ -65,3 +81,4 @@ export default function LoginPage() {
     </div>
   )
 }
+
