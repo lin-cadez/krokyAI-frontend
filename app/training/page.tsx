@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from 'lucide-react'
@@ -22,29 +22,24 @@ export default function TrainingPage() {
   const [currentDay, setCurrentDay] = useState(0)
   const [currentGroup, setCurrentGroup] = useState(0)
   const [trainingData, setTrainingData] = useState<Array<Meal[]>>([]) // Store groups of 3 meals
-  const [uniqueDates, setUniqueDates] = useState<string[]>([])
+  const [skipPressed, setSkipPressed] = useState(false) // Track if "Skip" is pressed for the current day
 
   useEffect(() => {
     async function fetchMenus() {
       try {
-        console.log('Fetching menus...')
         const response = await fetch('https://kroky-ai-backend.vercel.app/api/menus')
         if (!response.ok) {
           throw new Error('Failed to fetch menus')
         }
         const data: Meal[][] = await response.json()
 
-        // Extract and sort unique dates
         const dates = Array.from(new Set(data.flat().map((meal: Meal) => meal.date))).sort()
-        setUniqueDates(dates)
 
-        // Group meals by date
-        const groupedMeals = dates.map(date => 
+        const groupedMeals = dates.map(date =>
           data.flat().filter((meal: Meal) => meal.date === date)
         )
         setMeals(groupedMeals)
       } catch (err) {
-        console.error('Fetch error:', err)
         setError(err instanceof Error ? err.message : 'Failed to fetch menus')
       } finally {
         setLoading(false)
@@ -54,7 +49,6 @@ export default function TrainingPage() {
     fetchMenus()
   }, [])
 
-  // Get current group of meals to compare
   const getCurrentGroup = (): Meal[] => {
     const dayMeals = meals[currentDay]
     if (!dayMeals) return []
@@ -64,7 +58,6 @@ export default function TrainingPage() {
     return dayMeals.slice(startIndex, startIndex + groupSize)
   }
 
-  // Calculate progress
   const getTotalGroups = (dayMeals: DayMeals) => {
     const groupSize = 3
     return Math.ceil(dayMeals.length / groupSize)
@@ -72,62 +65,77 @@ export default function TrainingPage() {
 
   const totalGroups = meals.reduce((sum, dayMeals) => sum + getTotalGroups(dayMeals), 0)
   const completedGroups = trainingData.length
-  const progress = 10
+  const progress = Math.round((completedGroups / totalGroups) * 100)
 
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('sl-SI', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
-  const handleSelection = async (selectedMeal: Meal) => {
+  const handleSelection = async (selectedMeal?: Meal) => {
     const currentGroupMeals = getCurrentGroup()
 
-    // Add to training data (stores the group of 3 meals)
-    setTrainingData((prev) => [
-      ...prev,
-      currentGroupMeals.map((meal) => ({
-        id: meal.id,
-        name: meal.name,
-        date: meal.date,
-        selected: meal.id === selectedMeal.id,
-      })),
-    ])
+    if (selectedMeal) {
+      setTrainingData((prev) => [
+        ...prev,
+        currentGroupMeals.map((meal) => ({
+          id: meal.id,
+          name: meal.name,
+          date: meal.date,
+          selected: meal.id === selectedMeal.id,
+        })),
+      ])
+    } else {
+      setTrainingData((prev) => [
+        ...prev,
+        currentGroupMeals.map((meal) => ({
+          id: meal.id,
+          name: meal.name,
+          date: meal.date,
+          selected: false,
+        })),
+      ])
+      setSkipPressed(true) // Disable skip button after it's pressed
+    }
 
-    // Move to the next group
     const dayMeals = meals[currentDay]
     const totalGroupsForDay = getTotalGroups(dayMeals)
 
     if (currentGroup + 1 >= totalGroupsForDay) {
-      // Move to next day
       if (currentDay + 1 < meals.length) {
         setCurrentDay((prev) => prev + 1)
         setCurrentGroup(0)
+        setSkipPressed(false) // Reset skip state for the next day
       } else {
-        // Training complete
         try {
-          const trainingPayload = {
-            data: trainingData.map((group) => ({
-              options: group,
-              selectedOptionName: group.find((meal) => meal.selected)?.name || null,
-            })),
+          
+          const trainingPayload = trainingData.map((group) => ({
+            options: group.map((meal) => meal.name),
+            selectedOption: group.find((meal) => meal.selected)?.name || null,
+          }))
+          console.log("Training data:", trainingPayload)
+
+          const username = localStorage.getItem('username')
+          const sessionToken = localStorage.getItem('sessionToken')
+  
+          if (!username || !sessionToken) {
+            throw new Error('Username or sessionToken is missing from local storage')
+          }
+  
+          const response = await fetch(`https://kroky-ai-backend.vercel.app/api/upload?username=${encodeURIComponent(username)}&sessionToken=${encodeURIComponent(sessionToken)}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ trainingData: trainingPayload }),
+          })
+  
+
+          if (!response.ok) {
+            throw new Error(`Failed to submit training data: ${response.statusText}`)
           }
 
-          console.log('Training payload:', trainingPayload)
-
-          setError('Training completed successfully!')
+          setError("Training completed successfully!")
         } catch (err) {
-          setError(
-            err instanceof Error ? err.message : 'Failed to submit training data'
-          )
+          setError(err instanceof Error ? err.message : "Failed to submit training data")
         }
       }
     } else {
-      // Move to the next group
       setCurrentGroup((prev) => prev + 1)
     }
   }
@@ -168,18 +176,12 @@ export default function TrainingPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold mb-4">Train Your AI</h1>
           <p className="text-sm text-muted-foreground mb-4">
-            Click on the meal you prefer to help train the AI
+            Click on the meal you prefer or skip if you don't like any of them
           </p>
           <Progress value={progress} className="mb-2" />
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">
               {progress}% Complete
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Day {currentDay + 1} of {uniqueDates.length} ({formatDate(uniqueDates[currentDay])})
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Groups completed today: {currentGroup + 1} of {getTotalGroups(meals[currentDay])}
             </p>
           </div>
         </div>
@@ -194,11 +196,20 @@ export default function TrainingPage() {
               <CardHeader>
                 <CardTitle className="text-lg">{meal.name}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{formatDate(meal.date)}</p>
-              </CardContent>
             </Card>
           ))}
+        </div>
+
+        <div className="mt-4">
+          <button
+            className={`px-4 py-2 text-sm ${
+              skipPressed ? "bg-gray-400 cursor-not-allowed" : "bg-gray-200 hover:bg-gray-300"
+            } rounded`}
+            onClick={() => handleSelection(undefined)}
+            disabled={skipPressed} // Disable after skip is pressed
+          >
+            Skip
+          </button>
         </div>
       </div>
     </div>
