@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
@@ -11,36 +11,46 @@ export default function ProfilePage() {
   const { username, isAuthenticated } = useAuth()
   const [autoOrder, setAutoOrder] = useState(false)
   const [lessonDay, setLessonDay] = useState(1)  // Default lesson day to Monday (1)
-  const [showConfirmation, setShowConfirmation] = useState(false)
   const [sessionInfo, setSessionInfo] = useState({
     token: '',
     createdAt: '',
     expiresAt: ''
   })
 
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Ref to store the timeout ID
+
   useEffect(() => {
-    // Get session information from localStorage
+    // Get session and user info from localStorage
     const token = localStorage.getItem('sessionToken') || ''
     const timestamp = localStorage.getItem('sessionTime') || ''
-    
+    const storedAutoOrder = localStorage.getItem('autoOrder') === 'true'
+    const storedLessonDay = parseInt(localStorage.getItem('lessonDay') || '1')
+
     if (timestamp) {
       const creationTime = parseInt(timestamp)
       const expirationTime = creationTime + (30 * 24 * 60 * 60 * 1000)
     
       setSessionInfo({
-        token: token.slice(0, 8) + '...',
+        token: token.slice(0, 8) + '...',  // Display a truncated session token
         createdAt: new Date(creationTime).toLocaleString(),
         expiresAt: new Date(expirationTime).toLocaleString()
       })
+
+      // Set the auto order and lesson day from localStorage
+      setAutoOrder(storedAutoOrder)
+      setLessonDay(storedLessonDay)
     }
   }, [])
 
-  const handleAutoOrderToggle = async (checked: boolean) => {
-    setAutoOrder(checked)
+  const handleAutoOrderToggle = (checked: boolean) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current) // Clear the previous timeout if any
+    }
 
-    if (checked) {
-      setShowConfirmation(true)
-    } else {
+    debounceTimeoutRef.current = setTimeout(async () => {
+      setAutoOrder(checked)
+      localStorage.setItem('autoOrder', String(checked))  // Save the new auto order setting
+
       // Send API request to update auto order value
       try {
         const sessionToken = localStorage.getItem('sessionToken') || ''
@@ -66,11 +76,12 @@ export default function ProfilePage() {
       } catch (error) {
         console.error('Error updating auto order:', error)
       }
-    }
+    }, 250)
   }
 
   const handleLessonDayChange = async (newLessonDay: number) => {
     setLessonDay(newLessonDay)
+    localStorage.setItem('lessonDay', String(newLessonDay))  // Save the new lesson day
 
     try {
       const sessionToken = localStorage.getItem('sessionToken') || ''
@@ -152,7 +163,7 @@ export default function ProfilePage() {
                 </div>
                 <Switch
                   checked={autoOrder}
-                  onCheckedChange={handleAutoOrderToggle}
+                  onCheckedChange={(checked) => handleAutoOrderToggle(checked)}
                 />
               </div>
             </div>
@@ -162,17 +173,17 @@ export default function ProfilePage() {
                 <div className="space-y-0.5">
                   <h3 className="font-medium">Lesson Day</h3>
                   <p className="text-sm text-muted-foreground">
-                    Choose the day of the week for your lessons (1 = Monday, 7 = Sunday)
+                    Izberi dan, ko imaš pouk popoldne
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                  {[1, 2, 3, 4, 5, 6].map((day) => (
                     <Button
                       key={day}
                       variant={lessonDay === day ? "default" : "outline"}
                       onClick={() => handleLessonDayChange(day)}
                     >
-                      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day - 1]}
+                      {["Noup", "Pon", "Tor", "Sre", "Čet", "Pet"][day - 1]}
                     </Button>
                   ))}
                 </div>
@@ -180,31 +191,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </CardContent>
-        {showConfirmation && (
-          <div className="p-4 border-t bg-muted">
-            <p className="mb-4 text-sm">
-              By enabling AI ordering, the system will automatically place lunch orders based on your preferences. You can disable this feature at any time.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  setAutoOrder(true)
-                  setShowConfirmation(false)
-                }}
-              >
-                Continue
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowConfirmation(false)
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
       </Card>
     </div>
   )
