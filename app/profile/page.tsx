@@ -10,6 +10,7 @@ import { Clock, Key, Activity } from 'lucide-react'
 export default function ProfilePage() {
   const { username, isAuthenticated } = useAuth()
   const [autoOrder, setAutoOrder] = useState(false)
+  const [lessonDay, setLessonDay] = useState(1)  // Default lesson day to Monday (1)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [sessionInfo, setSessionInfo] = useState({
     token: '',
@@ -43,7 +44,7 @@ export default function ProfilePage() {
       // Send API request to update auto order value
       try {
         const sessionToken = localStorage.getItem('sessionToken') || ''
-        const response = await fetch('kroky-ai-backend.vercel.app/api/switchAuto', {
+        const response = await fetch('https://kroky-ai-backend.vercel.app/api/switchAuto', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -65,6 +66,35 @@ export default function ProfilePage() {
       } catch (error) {
         console.error('Error updating auto order:', error)
       }
+    }
+  }
+
+  const handleLessonDayChange = async (newLessonDay: number) => {
+    setLessonDay(newLessonDay)
+
+    try {
+      const sessionToken = localStorage.getItem('sessionToken') || ''
+      const response = await fetch('https://kroky-ai-backend.vercel.app/api/changeLessonDay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          sessionToken: sessionToken,
+          lessonDay: newLessonDay,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        console.log(data.message)  // success message
+      } else {
+        console.error(data.error)  // error message
+      }
+    } catch (error) {
+      console.error('Error updating lesson day:', error)
     }
   }
 
@@ -124,6 +154,28 @@ export default function ProfilePage() {
                   checked={autoOrder}
                   onCheckedChange={handleAutoOrderToggle}
                 />
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <h3 className="font-medium">Lesson Day</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Choose the day of the week for your lessons (1 = Monday, 7 = Sunday)
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                    <Button
+                      key={day}
+                      variant={lessonDay === day ? "default" : "outline"}
+                      onClick={() => handleLessonDayChange(day)}
+                    >
+                      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day - 1]}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
