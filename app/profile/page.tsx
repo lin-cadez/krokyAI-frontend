@@ -34,11 +34,37 @@ export default function ProfilePage() {
     }
   }, [])
 
-  const handleAutoOrderToggle = (checked: boolean) => {
+  const handleAutoOrderToggle = async (checked: boolean) => {
+    setAutoOrder(checked)
+
     if (checked) {
       setShowConfirmation(true)
     } else {
-      setAutoOrder(false)
+      // Send API request to update auto order value
+      try {
+        const sessionToken = localStorage.getItem('sessionToken') || ''
+        const response = await fetch('kroky-ai-backend.vercel.app/api/switchAuto', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: username,
+            sessionToken: sessionToken,
+            auto: checked,
+          }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          console.log(data.message)  // success message
+        } else {
+          console.error(data.error)  // error message
+        }
+      } catch (error) {
+        console.error('Error updating auto order:', error)
+      }
     }
   }
 
@@ -131,4 +157,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-

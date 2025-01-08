@@ -11,6 +11,7 @@ type Meal = {
   name: string
   date: string
   selected?: boolean
+  confidence_score?: number
 }
 
 type DayMeals = Meal[]
@@ -21,8 +22,9 @@ export default function TrainingPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentDay, setCurrentDay] = useState(0)
   const [currentGroup, setCurrentGroup] = useState(0)
-  const [trainingData, setTrainingData] = useState<Array<Meal[]>>([]) // Store groups of 3 meals
-  const [skipPressed, setSkipPressed] = useState(false) // Track if "Skip" is pressed for the current day
+  const [trainingData, setTrainingData] = useState<Array<Meal[]>>([])
+  const [skipPressed, setSkipPressed] = useState(false)
+  const [startTime, setStartTime] = useState<number>(0) // Track decision start time
 
   useEffect(() => {
     async function fetchMenus() {
@@ -63,12 +65,21 @@ export default function TrainingPage() {
     return Math.ceil(dayMeals.length / groupSize)
   }
 
+  const calculateConfidenceScore = (decisionTime: number) => {
+    if (decisionTime > 40) return 1
+    if (decisionTime > 10) return Math.min(100, 1 + (10 / decisionTime) ** 2)
+    return Math.min(100, 1 + 50 / decisionTime)
+  }
+
   const totalGroups = meals.reduce((sum, dayMeals) => sum + getTotalGroups(dayMeals), 0)
   const completedGroups = trainingData.length
   const progress = Math.round((completedGroups / totalGroups) * 100)
 
   const handleSelection = async (selectedMeal?: Meal) => {
     const currentGroupMeals = getCurrentGroup()
+    const endTime = Date.now()
+    const decisionTime = (endTime - startTime) / 1000 // Time in seconds
+    const confidenceScore = calculateConfidenceScore(decisionTime)
 
     if (selectedMeal) {
       setTrainingData((prev) => [
@@ -78,6 +89,7 @@ export default function TrainingPage() {
           name: meal.name,
           date: meal.date,
           selected: meal.id === selectedMeal.id,
+          confidence_score: confidenceScore,
         })),
       ])
     } else {
@@ -88,9 +100,10 @@ export default function TrainingPage() {
           name: meal.name,
           date: meal.date,
           selected: false,
+          confidence_score: confidenceScore,
         })),
       ])
-      setSkipPressed(true) // Disable skip button after it's pressed
+      setSkipPressed(true)
     }
 
     const dayMeals = meals[currentDay]
@@ -100,23 +113,26 @@ export default function TrainingPage() {
       if (currentDay + 1 < meals.length) {
         setCurrentDay((prev) => prev + 1)
         setCurrentGroup(0)
-        setSkipPressed(false) // Reset skip state for the next day
+        setSkipPressed(false)
       } else {
         try {
-          
-          const trainingPayload = trainingData.map((group) => ({
-            options: group.map((meal) => meal.name),
-            selectedOption: group.find((meal) => meal.selected)?.name || null,
-          }))
+            const trainingPayload = trainingData.map((group) => {
+            const selectedMeal = group.find((meal) => meal.selected)
+            return {
+              options: group.map((meal) => meal.name),
+              selectedOption: selectedMeal?.name || null,
+              confidence_score: selectedMeal?.confidence_score || null,
+            }
+            })
           console.log("Training data:", trainingPayload)
 
           const username = localStorage.getItem('username')
           const sessionToken = localStorage.getItem('sessionToken')
-  
+
           if (!username || !sessionToken) {
             throw new Error('Username or sessionToken is missing from local storage')
           }
-  
+
           const response = await fetch(`https://kroky-ai-backend.vercel.app/api/upload?username=${encodeURIComponent(username)}&sessionToken=${encodeURIComponent(sessionToken)}`, {
             method: "POST",
             headers: {
@@ -124,7 +140,6 @@ export default function TrainingPage() {
             },
             body: JSON.stringify({ trainingData: trainingPayload }),
           })
-  
 
           if (!response.ok) {
             throw new Error(`Failed to submit training data: ${response.statusText}`)
@@ -138,7 +153,13 @@ export default function TrainingPage() {
     } else {
       setCurrentGroup((prev) => prev + 1)
     }
+
+    setStartTime(Date.now()) // Reset start time for the next group
   }
+
+  useEffect(() => {
+    setStartTime(Date.now()) // Set start time when a new group is shown
+  }, [currentDay, currentGroup])
 
   if (loading) {
     return (
@@ -176,8 +197,9 @@ export default function TrainingPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold mb-4">Train Your AI</h1>
           <p className="text-sm text-muted-foreground mb-4">
-            Click on the meal you prefer or skip if you don't like any of them
+            Click on the meal you prefer or skip if you don&apos;t like any of them
           </p>
+
           <Progress value={progress} className="mb-2" />
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">
@@ -206,7 +228,7 @@ export default function TrainingPage() {
               skipPressed ? "bg-gray-400 cursor-not-allowed" : "bg-gray-200 hover:bg-gray-300"
             } rounded`}
             onClick={() => handleSelection(undefined)}
-            disabled={skipPressed} // Disable after skip is pressed
+            disabled={skipPressed}
           >
             Skip
           </button>
