@@ -27,8 +27,10 @@ export default function TrainingPage() {
   const [trainingData, setTrainingData] = useState<Array<Meal[]>>([])
   const [skipPressed, setSkipPressed] = useState(false)
   const [startTime, setStartTime] = useState<number>(0) // Track decision start time
+  const [isTrainingComplete, setIsTrainingComplete] = useState<boolean>(false) // Track training completion
 
   useEffect(() => {
+    // Fetch menus on initial render
     async function fetchMenus() {
       try {
         const response = await fetch('https://kroky-ai-backend.vercel.app/api/menus')
@@ -51,6 +53,13 @@ export default function TrainingPage() {
     }
 
     fetchMenus()
+
+    // Check if training is complete in localStorage (client-side only)
+    if (typeof window !== "undefined") {
+      const trainingStatus = localStorage.getItem('isTrainingComplete') === 'true'
+      setIsTrainingComplete(trainingStatus)
+    }
+
   }, [])
 
   const getCurrentGroup = (): Meal[] => {
@@ -118,14 +127,14 @@ export default function TrainingPage() {
         setSkipPressed(false)
       } else {
         try {
-            const trainingPayload = trainingData.map((group) => {
+          const trainingPayload = trainingData.map((group) => {
             const selectedMeal = group.find((meal) => meal.selected)
             return {
               options: group.map((meal) => meal.name),
               selectedOption: selectedMeal?.name || null,
               confidence_score: selectedMeal?.confidence_score || null,
             }
-            })
+          })
           console.log("Training data:", trainingPayload)
 
           const username = localStorage.getItem('username')
@@ -150,9 +159,6 @@ export default function TrainingPage() {
           setError("Training completed successfully!")
           localStorage.setItem('isTrainingComplete', 'true')
           router.push('/profile')
-          
-
-
         } catch (err) {
           setError(err instanceof Error ? err.message : "Failed to submit training data")
         }

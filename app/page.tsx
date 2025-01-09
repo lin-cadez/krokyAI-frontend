@@ -1,12 +1,20 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Clock, Check, Github, Sparkles } from 'lucide-react'
 import { UserCount } from '@/components/ui/user-count'
 
 export default function HomePage() {
-  const username = typeof window !== "undefined" ? localStorage.getItem('username') : null
+  const [username, setUsername] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUsername = localStorage.getItem('username')
+      setUsername(storedUsername)
+    }
+  }, []) // Empty dependency array ensures this runs only once after the component mounts
 
   return (
     <div className="min-h-screen">
@@ -84,4 +92,3 @@ export default function HomePage() {
     </div>
   )
 }
-

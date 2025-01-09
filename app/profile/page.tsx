@@ -8,7 +8,15 @@ import { useAuth } from '@/contexts/auth-context'
 import { Clock, Key, User, Mail, Brain, Calendar } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { username, isAuthenticated } = useAuth()
+  const { isAuthenticated, username, logout } = useAuth()
+  const [isTrainingComplete, setIsTrainingComplete] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const trainingComplete = localStorage.getItem('isTrainingComplete') === 'true'
+      setIsTrainingComplete(trainingComplete)
+    }
+  }, [])
   const [autoOrder, setAutoOrder] = useState(false)
   const [lessonDay, setLessonDay] = useState(1)  // Default lesson day to Monday (1)
   const [sessionInfo, setSessionInfo] = useState({
