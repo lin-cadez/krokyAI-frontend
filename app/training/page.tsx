@@ -192,6 +192,16 @@ export default function TrainingPage() {
     )
   }
 
+  if (isTrainingComplete) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <Alert>
+          <AlertDescription>Training is already complete!</AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
   const currentGroupMeals = getCurrentGroup()
 
   if (!currentGroupMeals.length) {

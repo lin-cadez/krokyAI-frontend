@@ -37,6 +37,7 @@ export default function LoginPage() {
     }
   }
 
+  // Early return if it's not client-side
   if (!isClient) {
     return null // Prevent rendering of component on server-side
   }

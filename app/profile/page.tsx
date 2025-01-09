@@ -11,13 +11,13 @@ export default function ProfilePage() {
   const { isAuthenticated, username } = useAuth()
   const [isTrainingComplete, setIsTrainingComplete] = useState(false)
 
-
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const trainingComplete = localStorage.getItem('isTrainingComplete') === 'true'
       setIsTrainingComplete(trainingComplete)
     }
   }, [])
+
   const [autoOrder, setAutoOrder] = useState(false)
   const [lessonDay, setLessonDay] = useState(1)  // Default lesson day to Monday (1)
   const [sessionInfo, setSessionInfo] = useState({
@@ -227,6 +227,15 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Display Training Status */}
+            <div className="flex items-center space-x-4">
+              {isTrainingComplete ? (
+                <p className="text-green-500">Training Complete</p>
+              ) : (
+                <p className="text-red-500">Training Incomplete</p>
+              )}
             </div>
           </div>
         </CardContent>
