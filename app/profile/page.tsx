@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useAuth } from '@/contexts/auth-context'
-import { Clock, Key, Activity, User, Mail, Brain, Calendar } from 'lucide-react'
+import { Clock, Key,  User, Mail, Brain, Calendar } from 'lucide-react'
 
 export default function ProfilePage() {
   const { username, isAuthenticated } = useAuth()
