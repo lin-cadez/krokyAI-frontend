@@ -8,8 +8,9 @@ import { useAuth } from '@/contexts/auth-context'
 import { Clock, Key, User, Mail, Brain, Calendar } from 'lucide-react'
 
 export default function ProfilePage() {
-  const { isAuthenticated, username, logout } = useAuth()
+  const { isAuthenticated, username } = useAuth()
   const [isTrainingComplete, setIsTrainingComplete] = useState(false)
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
