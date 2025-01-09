@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('username', username)
         localStorage.setItem('sessionTime', sessionTime)
         localStorage.setItem('autoOrder', data.auto)  // Default to false
-        localStorage.setItem('lessonDay', data.lessonDay)  // Default to Monday (1)
+        localStorage.setItem('lessonDay', data.lessonDay)  //  Default to Monday (1)
 
         setIsAuthenticated(true)
         setUsername(username)

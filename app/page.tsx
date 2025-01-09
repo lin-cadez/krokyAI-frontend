@@ -3,6 +3,14 @@ import { Button } from "@/components/ui/button"
 import { Brain, Clock, Check } from 'lucide-react'
 
 export default function HomePage() {
+
+
+  let a = fetch("https://kroky-ai-backend.vercel.app/api/userCount")
+    .then(async (res) => {
+      const data: { userCount: number } = await res.json();
+      return data.userCount;
+    });
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -12,6 +20,7 @@ export default function HomePage() {
             <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
               Never Forget School Lunch Orders with <span className="text-primary">KrokyAI</span>
             </h1>
+            <h2 className="text-2xl text-muted-foreground mt-4">Trenutno storitev uporablja {a} uporabnikov.</h2>
             <p className="mt-6 text-xl text-muted-foreground max-w-2xl mx-auto">
               Set up once, and let our AI handle your weekly school lunch orders from kroky.si automatically.
               Powered by custom machine learning algorithm that learns your preferences.
