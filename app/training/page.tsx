@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -17,6 +18,7 @@ type Meal = {
 type DayMeals = Meal[]
 
 export default function TrainingPage() {
+  const router = useRouter()
   const [meals, setMeals] = useState<DayMeals[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -146,6 +148,11 @@ export default function TrainingPage() {
           }
 
           setError("Training completed successfully!")
+          localStorage.setItem('isTrainingComplete', 'true')
+          router.push('/profile')
+          
+
+
         } catch (err) {
           setError(err instanceof Error ? err.message : "Failed to submit training data")
         }

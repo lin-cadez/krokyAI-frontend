@@ -10,8 +10,10 @@ import { AuthProvider, useAuth } from '@/contexts/auth-context'
 const inter = Inter({ subsets: ['latin'] })
 
 function NavBar() {
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, logout, isTrainingComplete } = useAuth()
   const pathname = usePathname()
+  const b = localStorage.getItem('isTrainingComplete')==='true';
+
 
   return (
     <nav className="border-b">
@@ -20,10 +22,15 @@ function NavBar() {
           KrokyAI
         </Link>
         <div className="flex items-center gap-4">
+          
           {isAuthenticated ? (
             <>
-              <Link href="/training">
+              <Link href="/training" className="relative">
                 <Button variant="ghost">Training</Button>
+                {/* Display red dot notification if training is not complete */}
+                {!b && (
+                  <div className="absolute top-3 right-0 w-2.5 h-2.5 bg-red-600 rounded-full"></div>
+                )}
               </Link>
               <Link href="/profile">
                 <Button variant="ghost">Profile</Button>
@@ -61,4 +68,3 @@ export default function RootLayout({
     </html>
   )
 }
-

@@ -1,15 +1,12 @@
+'use client'
+
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Brain, Clock, Check } from 'lucide-react'
+import { Brain, Clock, Check, Github, Sparkles } from 'lucide-react'
+import { UserCount } from '@/components/ui/user-count'
 
 export default function HomePage() {
-
-
-  let a = fetch("https://kroky-ai-backend.vercel.app/api/userCount")
-    .then(async (res) => {
-      const data: { userCount: number } = await res.json();
-      return data.userCount;
-    });
+  const username = typeof window !== "undefined" ? localStorage.getItem('username') : null
 
   return (
     <div className="min-h-screen">
@@ -17,19 +14,20 @@ export default function HomePage() {
       <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-primary/5 to-background">
         <div className="max-w-7xl mx-auto">
           <div className="text-center">
+            <div className="flex justify-center mb-6">
+              <UserCount />
+            </div>
             <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
-              Never Forget School Lunch Orders with <span className="text-primary">KrokyAI</span>
+              Pozabi na zamujanje malic z <span className="text-primary">KrokyAI</span>
             </h1>
-            <h2 className="text-2xl text-muted-foreground mt-4">Trenutno storitev uporablja {a} uporabnikov.</h2>
             <p className="mt-6 text-xl text-muted-foreground max-w-2xl mx-auto">
-              Set up once, and let our AI handle your weekly school lunch orders from kroky.si automatically.
-              Powered by custom machine learning algorithm that learns your preferences.
+              Nastavi enkrat in pusti, da umetna inteligenca sama naroča malice na kroky.si.
             </p>
             <div className="mt-10 flex gap-4 justify-center">
-              <Link href="/login">
-                <Button size="lg">
-                  Start Ordering
-                  <Check className="ml-2 h-4 w-4" />
+              <Link href={username ? "/profile" : "/login"}>
+                <Button size="lg" className="group">
+                  {username ? "Moj Profil" : "Začni Zdaj"}
+                  <Check className="ml-2 h-4 w-4 group-hover:rotate-12 transition-transform" />
                 </Button>
               </Link>
             </div>
@@ -41,30 +39,48 @@ export default function HomePage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-lg border bg-card">
+            <div className="p-6 rounded-lg border bg-card/50 backdrop-blur hover:scale-105 transition-all">
               <Clock className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Set Up Once</h3>
+              <h3 className="text-xl font-semibold mb-2">Enkratna Nastavitev</h3>
               <p className="text-muted-foreground">
-                Configure your preferences once and let the system work for you every week.
+                Nastavi svoje želje enkrat in sistem bo delal zate vsak teden.
               </p>
             </div>
-            <div className="p-6 rounded-lg border bg-card">
-              <Brain className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Smart AI Selection</h3>
+            <div className="p-6 rounded-lg border bg-card/50 backdrop-blur hover:scale-105 transition-all">
+              <Sparkles className="h-12 w-12 text-primary mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Umetna Inteligenca</h3>
               <p className="text-muted-foreground">
-                Our AI learns your preferences and makes intelligent lunch choices for you.
+                Napredni algoritmi se učijo tvojih preferenc in izbirajo malice po tvojem okusu.
               </p>
             </div>
-            <div className="p-6 rounded-lg border bg-card">
+            <div className="p-6 rounded-lg border bg-card/50 backdrop-blur hover:scale-105 transition-all">
               <Check className="h-12 w-12 text-primary mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Always On Time</h3>
+              <h3 className="text-xl font-semibold mb-2">Vedno Pravočasno</h3>
               <p className="text-muted-foreground">
-                Never miss a lunch order deadline again with automatic weekly ordering.
+                Nikoli več ne zamudi roka za naročilo malice.
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t py-8">
+        <div className="container mx-auto px-4 flex flex-col items-center gap-4">
+          <p className="text-sm text-muted-foreground">
+            Lin Čadež © 2025
+          </p>
+          <a
+            href="https://github.com/lin-cadez"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Github className="h-4 w-4" />
+            github.com/lin-cadez
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }

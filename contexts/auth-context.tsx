@@ -10,6 +10,7 @@ interface AuthContextType {
   email: string | null
   autoOrder: boolean
   lessonDay: number
+  isTrainingComplete: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => void
   setAutoOrder: (value: boolean) => void
@@ -25,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState<string | null>(null)  // Store user's email
   const [autoOrder, setAutoOrder] = useState<boolean>(false)
   const [lessonDay, setLessonDay] = useState<number>(1)  // Default to Monday (1)
+  const [isTrainingComplete, setIsTrainingComplete] = useState<boolean>(false)  // Store training completion status
   const router = useRouter()
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedLessonDay = Number(localStorage.getItem('lessonDay')) || 1
     const storedName = localStorage.getItem('name')
     const storedEmail = localStorage.getItem('email')
+    const storedTrainingStatus = localStorage.getItem('isTrainingComplete') === 'true'
 
     if (storedUsername && storedToken && sessionTime) {
       // Check if session is expired (1 month = 30 days in milliseconds)
@@ -50,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLessonDay(storedLessonDay)
         setName(storedName)
         setEmail(storedEmail)
+        setIsTrainingComplete(storedTrainingStatus)  // Set training completion status
       }
     }
   }, [])
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('lessonDay', data.lessonDay)  // Store lesson day
         localStorage.setItem('name', data.name)  // Store name
         localStorage.setItem('email', data.email)  // Store email
+        localStorage.setItem('isTrainingComplete', String(data.isTrainingComplete)) // Store training completion status
 
         setIsAuthenticated(true)
         setUsername(username)
@@ -85,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setEmail(data.email || null)  // Set email
         setAutoOrder(data.auto)  // Set auto order
         setLessonDay(data.lessonDay || 1)  // Set lesson day
+        setIsTrainingComplete(data.isTrainingComplete || false)  // Set training completion status
 
         router.push('/profile') // Redirect to profile page
       }
@@ -102,12 +108,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('lessonDay')
     localStorage.removeItem('name')
     localStorage.removeItem('email')
+    localStorage.removeItem('isTrainingComplete')  // Remove training completion status
     setIsAuthenticated(false)
     setUsername(null)
     setName(null)
     setEmail(null)
     setAutoOrder(false)
     setLessonDay(1)
+    setIsTrainingComplete(false)  // Reset training completion status
     router.push('/login')
   }
 
@@ -131,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email, 
       autoOrder, 
       lessonDay, 
+      isTrainingComplete, // Add training completion status to context
       login, 
       logout, 
       setAutoOrder: handleSetAutoOrder, 
