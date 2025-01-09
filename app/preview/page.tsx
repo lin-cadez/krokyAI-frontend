@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useAuth } from '@/contexts/auth-context'
-import { Clock, Key, Activity, User, Mail, Brain, Calendar } from 'lucide-react'
+import { Clock, Key, Activity } from 'lucide-react'
 
 export default function ProfilePage() {
   const { username, isAuthenticated } = useAuth()
@@ -16,8 +16,6 @@ export default function ProfilePage() {
     createdAt: '',
     expiresAt: ''
   })
-  const [userName, setUserName] = useState<string | null>(null) // To store the user's name
-  const [userEmail, setUserEmail] = useState<string | null>(null) // To store the user's email
 
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Ref to store the timeout ID
 
@@ -27,13 +25,11 @@ export default function ProfilePage() {
     const timestamp = localStorage.getItem('sessionTime') || ''
     const storedAutoOrder = localStorage.getItem('autoOrder') === 'true'
     const storedLessonDay = parseInt(localStorage.getItem('lessonDay') || '1')
-    const storedName = localStorage.getItem('name')
-    const storedEmail = localStorage.getItem('email')
 
     if (timestamp) {
       const creationTime = parseInt(timestamp)
       const expirationTime = creationTime + (30 * 24 * 60 * 60 * 1000)
-
+    
       setSessionInfo({
         token: token.slice(0, 8) + '...',  // Display a truncated session token
         createdAt: new Date(creationTime).toLocaleString(),
@@ -43,10 +39,6 @@ export default function ProfilePage() {
       // Set the auto order and lesson day from localStorage
       setAutoOrder(storedAutoOrder)
       setLessonDay(storedLessonDay)
-
-      // Set name and email from localStorage
-      setUserName(storedName)
-      setUserEmail(storedEmail)
     }
   }, [])
 
@@ -124,94 +116,72 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <Card className="max-w-2xl mx-auto">
-        <CardHeader className="border-b">
-          <CardTitle className="text-2xl font-bold">Profile Settings</CardTitle>
+        <CardHeader>
+          <CardTitle className="text-2xl">Profile Settings</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 pt-6">
+        <CardContent className="space-y-6">
           <div className="grid gap-6">
-            {/* User Information Section */}
-            <div className="grid gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <Key className="h-5 w-5 text-primary" />
-                </div>
-                <div className="space-y-0.5 flex-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">Username</h3>
-                  <p className="font-medium">{username}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
-                <div className="space-y-0.5 flex-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">Name</h3>
-                  <p className="font-medium">{userName}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <Mail className="h-5 w-5 text-primary" />
-                </div>
-                <div className="space-y-0.5 flex-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">Email</h3>
-                  <p className="font-medium">{userEmail}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <Clock className="h-5 w-5 text-primary" />
-                </div>
-                <div className="space-y-0.5 flex-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">Session Created</h3>
-                  <p className="font-medium">{sessionInfo.createdAt}</p>
-                </div>
+            <div className="flex items-center space-x-4">
+              <Key className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Username</h3>
+                <p className="text-muted-foreground">{username}</p>
               </div>
             </div>
 
-            {/* Settings Section */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <Brain className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <h3 className="font-medium">Automatic Ordering</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Let AI order meals for you automatically
-                    </p>
-                  </div>
+            <div className="flex items-center space-x-4">
+              <Clock className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Session Created</h3>
+                <p className="text-muted-foreground">{sessionInfo.createdAt}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Clock className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Session Expires</h3>
+                <p className="text-muted-foreground">{sessionInfo.expiresAt}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Activity className="h-6 w-6 text-primary" />
+              <div className="space-y-0.5">
+                <h3 className="font-medium">Session Token</h3>
+                <p className="text-muted-foreground font-mono">{sessionInfo.token}</p>
+              </div>
+            </div>
+
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <h3 className="font-medium">Automatic Ordering</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Let AI order meals for you automatically
+                  </p>
                 </div>
                 <Switch
                   checked={autoOrder}
-                  onCheckedChange={handleAutoOrderToggle}
+                  onCheckedChange={(checked) => handleAutoOrderToggle(checked)}
                 />
               </div>
+            </div>
 
-              <div className="p-4 bg-muted/50 rounded-lg space-y-4">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <h3 className="font-medium">Lesson Day</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Izberi dan, ko imaš pouk popoldne
-                    </p>
-                  </div>
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <h3 className="font-medium">Lesson Day</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Izberi dan, ko imaš pouk popoldne
+                  </p>
                 </div>
-                <div className="grid grid-cols-6 gap-2 pt-2">
+                <div className="flex gap-2">
                   {[1, 2, 3, 4, 5, 6].map((day) => (
                     <Button
                       key={day}
                       variant={lessonDay === day ? "default" : "outline"}
                       onClick={() => handleLessonDayChange(day)}
-                      className="w-full"
-                      size="sm"
                     >
                       {["Noup", "Pon", "Tor", "Sre", "Čet", "Pet"][day - 1]}
                     </Button>
