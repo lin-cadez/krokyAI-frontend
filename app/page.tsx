@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { Brain, Clock, Check, Github, Sparkles } from 'lucide-react'
+import { Clock, Check, Github, Sparkles } from 'lucide-react'
 import { UserCount } from '@/components/ui/user-count'
 
 export default function HomePage() {

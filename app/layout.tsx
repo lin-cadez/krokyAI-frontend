@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from '@/contexts/auth-context'
 const inter = Inter({ subsets: ['latin'] })
 
 function NavBar() {
-  const { isAuthenticated, logout, isTrainingComplete } = useAuth()
+  const { isAuthenticated, logout} = useAuth()
   const pathname = usePathname()
   const b = localStorage.getItem('isTrainingComplete')==='true';
 
