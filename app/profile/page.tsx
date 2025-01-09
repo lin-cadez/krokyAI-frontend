@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import {TrainingStatus} from "@/components/training-status"
 import { useAuth } from '@/contexts/auth-context'
 import { Clock, Key,  User, Mail, Brain, Calendar } from 'lucide-react'
 
@@ -134,7 +135,7 @@ export default function ProfilePage() {
     <div className="container mx-auto py-8 px-4">
       <Card className="max-w-2xl mx-auto">
         <CardHeader className="border-b">
-          <CardTitle className="text-2xl font-bold">Profile Settings</CardTitle>
+          <CardTitle className="text-2xl font-bold">Nastavitve profila</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
           <div className="grid gap-6">
@@ -145,7 +146,7 @@ export default function ProfilePage() {
                   <Key className="h-5 w-5 text-primary" />
                 </div>
                 <div className="space-y-0.5 flex-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">Username</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground">Uporabniško ime</h3>
                   <p className="font-medium">{username}</p>
                 </div>
               </div>
@@ -155,7 +156,7 @@ export default function ProfilePage() {
                   <User className="h-5 w-5 text-primary" />
                 </div>
                 <div className="space-y-0.5 flex-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">Name</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground">Ime</h3>
                   <p className="font-medium">{userName}</p>
                 </div>
               </div>
@@ -175,7 +176,7 @@ export default function ProfilePage() {
                   <Clock className="h-5 w-5 text-primary" />
                 </div>
                 <div className="space-y-0.5 flex-1">
-                  <h3 className="font-medium text-sm text-muted-foreground">Session Created</h3>
+                  <h3 className="font-medium text-sm text-muted-foreground">Seja ustvarjena</h3>
                   <p className="font-medium">{sessionInfo.createdAt}</p>
                 </div>
               </div>
@@ -189,9 +190,9 @@ export default function ProfilePage() {
                     <Brain className="h-5 w-5 text-primary" />
                   </div>
                   <div className="space-y-0.5">
-                    <h3 className="font-medium">Automatic Ordering</h3>
+                    <h3 className="font-medium">Avtomatsko naročanje</h3>
                     <p className="text-sm text-muted-foreground">
-                      Let AI order meals for you automatically
+                      Dovoli, da umtna inteligenca naroča malice namesto tebe
                     </p>
                   </div>
                 </div>
@@ -207,7 +208,7 @@ export default function ProfilePage() {
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
                   <div className="space-y-0.5">
-                    <h3 className="font-medium">Lesson Day</h3>
+                    <h3 className="font-medium">Popoldanski pouk</h3>
                     <p className="text-sm text-muted-foreground">
                       Izberi dan, ko imaš pouk popoldne
                     </p>
@@ -230,12 +231,10 @@ export default function ProfilePage() {
             </div>
 
             {/* Display Training Status */}
-            <div className="flex items-center space-x-4">
-              {isTrainingComplete ? (
-                <p className="text-green-500">Training Complete</p>
-              ) : (
-                <p className="text-red-500">Training Incomplete</p>
-              )}
+              <div className="flex items-center space-x-4">
+              <TrainingStatus isComplete={isTrainingComplete} />
+
+            
             </div>
           </div>
         </CardContent>

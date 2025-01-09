@@ -20,13 +20,13 @@ export default function NavBar() {
           {isAuthenticated ? (
             <>
               <Link href="/training" className="relative">
-                <Button variant="ghost">Training</Button>
+                <Button variant="ghost">Urjenje</Button>
                 {!b && (
                   <div className="absolute top-3 right-0 w-2.5 h-2.5 bg-red-600 rounded-full"></div>
                 )}
               </Link>
               <Link href="/profile">
-                <Button variant="ghost">Profile</Button>
+                <Button variant="ghost">Profil</Button>
               </Link>
               <Button variant="destructive" onClick={logout}>
                 Logout
